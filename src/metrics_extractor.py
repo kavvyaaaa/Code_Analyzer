@@ -185,6 +185,17 @@ class MetricsExtractor:
         else:
             return {}
 
+    @staticmethod
+    def _should_skip_dir(root: str) -> bool:
+        """Skip hidden, vendor, and build directories during project scans."""
+        skip_names = {'.git', 'venv', 'env', 'node_modules', 'build', 'dist', '__pycache__'}
+        for part in root.split(os.sep):
+            if part in ('.', '..', ''):
+                continue
+            if part.startswith('.') or part in skip_names:
+                return True
+        return False
+
     @classmethod
     def analyze_project(cls, directory: str) -> dict:
         """
@@ -196,8 +207,7 @@ class MetricsExtractor:
         
         # First pass for Java files: collect all class names and parents to resolve hierarchy
         for root, _, files in os.walk(directory):
-            # Skip hidden directories and virtual envs
-            if any(part.startswith('.') or part in ('venv', 'env', 'node_modules', 'build', 'dist') for part in root.split(os.sep)):
+            if cls._should_skip_dir(root):
                 continue
             for file in files:
                 if file.endswith('.java'):
@@ -223,7 +233,7 @@ class MetricsExtractor:
                 
         # Second pass: compute metrics for all files
         for root, _, files in os.walk(directory):
-            if any(part.startswith('.') or part in ('venv', 'env', 'node_modules', 'build', 'dist') for part in root.split(os.sep)):
+            if cls._should_skip_dir(root):
                 continue
             for file in files:
                 if file.endswith(('.py', '.java')):

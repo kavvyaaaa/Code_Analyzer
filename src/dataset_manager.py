@@ -31,7 +31,7 @@ class DatasetManager:
         },
         "tomcat": {
             "name": "Apache Tomcat 6.0",
-            "url": "https://raw.githubusercontent.com/feiwww/PROMISE-backup/master/bug-data/tomcat/tomcat-6.0.csv",
+            "url": "https://raw.githubusercontent.com/klainfo/DefectData/master/inst/extdata/terapromise/ck/tomcat.csv",
             "filename": "tomcat-6.0.csv"
         }
     }
@@ -103,8 +103,12 @@ class DatasetManager:
             target_col = df.columns[-1]
             
         # Target: binary classification (1 = buggy, 0 = clean)
-        # In PROMISE, bug column contains count of defects.
-        df['is_buggy'] = (df[target_col] > 0).astype(int)
+        # In PROMISE, bug column contains count of defects (or yes/no strings).
+        bug_values = df[target_col]
+        if bug_values.dtype == object:
+            df['is_buggy'] = bug_values.astype(str).str.lower().isin(['yes', 'true', '1', 'buggy']).astype(int)
+        else:
+            df['is_buggy'] = (pd.to_numeric(bug_values, errors='coerce').fillna(0) > 0).astype(int)
         
         # Feature columns: numerical columns that are not metadata or target
         exclude_cols = metadata_cols + [target_col, 'is_buggy']

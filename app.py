@@ -124,6 +124,8 @@ if "git_features" not in st.session_state:
     st.session_state["git_features"] = None
 if "git_data" not in st.session_state:
     st.session_state["git_data"] = None
+if "repo_path" not in st.session_state:
+    st.session_state["repo_path"] = None
 
 # Header Banner
 st.markdown("""
@@ -432,6 +434,7 @@ with tab2:
                         st.error("Merge between git history files and current workspace files yielded 0 matches. Files might have been deleted/moved.")
                     else:
                         st.session_state["git_data"] = joined_df
+                        st.session_state["repo_path"] = target_path
                         st.success(f"Successfully analyzed {len(joined_df)} files!")
                         
             except Exception as e:
@@ -606,15 +609,9 @@ with tab3:
                 files_list = st.session_state["git_data"]['filepath'].tolist()
                 selected_file = st.selectbox("Select File to Inspect", options=files_list)
                 
-                # Fetch text of file if local or cloned temp
-                # We need to recall the repository path
-                repo_path = repo_url # Fallback if URL clone temp path is lost, but we can look for it in session state
-                
-                # Find file path
-                # Standardize
-                filepath_full = os.path.join(repo_url, selected_file)
-                if not os.path.exists(filepath_full) and temp_dir:
-                    filepath_full = os.path.join(temp_dir, selected_file)
+                # Resolve file path from stored repo workspace
+                base_path = st.session_state.get("repo_path") or "."
+                filepath_full = os.path.join(base_path, selected_file)
                     
                 if os.path.exists(filepath_full):
                     try:
